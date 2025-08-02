@@ -1,6 +1,6 @@
 name: devchat
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # nostr_sdk: ^0.0.1
+  nostr: ^1.4.0
   cupertino_icons: ^1.0.8
   flutter_blue_plus: ^1.35.5
   flutter_reactive_ble: ^5.0.2
@@ -20,7 +22,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
-
-
- 

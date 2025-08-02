@@ -1,7 +1,8 @@
+// lib/pages/home_page.dart
 import 'package:flutter/material.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/custom_app_bar.dart';
-import '../services/bluetooth_service.dart';
+import '../services/nostr_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,74 +11,78 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final _nostr = NostrService();
+  final _ctrl = TextEditingController();
   final List<Map<String, String>> _messages = [];
-  final _controller = TextEditingController();
-  final _btService = BluetoothService();
 
   @override
   void initState() {
     super.initState();
-    _btService.startScanAndConnect().then((_) {
-      _btService.messagesStream.listen((msg) {
+    _nostr.init().then((_) {
+      _nostr.messages.listen((msg) {
         setState(() {
-          _messages.insert(0, {'text': msg, 'sender': 'Phone'});
+          _messages.insert(0, {
+            'sender': 'Friend',
+            'text': msg,
+          });
         });
       });
     });
   }
 
-  void _sendMessage() {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
+  void _send() {
+    final txt = _ctrl.text.trim();
+    if (txt.isEmpty) return;
     setState(() {
-      _messages.insert(0, {'text': text, 'sender': 'You'});
+      _messages.insert(0, {
+        'sender': 'You',
+        'text': txt,
+      });
     });
-    _btService.sendMessage(text);
-    _controller.clear();
+    _nostr.send(txt);
+    _ctrl.clear();
   }
 
   @override
   void dispose() {
-    _btService.dispose();
-    _controller.dispose();
+    _nostr.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const CustomAppBar(title: 'DevChat'),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              reverse: true,
-              itemCount: _messages.length,
-              itemBuilder: (ctx, i) => MessageBubble(
-                text: _messages[i]['text']!,
-                sender: _messages[i]['sender']!,
+  Widget build(BuildContext context) => Scaffold(
+        appBar: const CustomAppBar(title: 'DevChat'),
+        body: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                reverse: true,
+                itemCount: _messages.length,
+                itemBuilder: (ctx, i) => MessageBubble(
+                  text: _messages[i]['text']!,
+                  sender: _messages[i]['sender']!,
+                ),
               ),
             ),
-          ),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration:
-                        const InputDecoration(labelText: 'Type your message'),
-                    onSubmitted: (_) => _sendMessage(),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _ctrl,
+                      decoration:
+                          const InputDecoration(labelText: 'Type your message'),
+                      onSubmitted: (_) => _send(),
+                    ),
                   ),
-                ),
-                IconButton(icon: const Icon(Icons.send), onPressed: _sendMessage),
-              ],
+                  IconButton(icon: const Icon(Icons.send), onPressed: _send),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
+          ],
+        ),
+      );
 }
