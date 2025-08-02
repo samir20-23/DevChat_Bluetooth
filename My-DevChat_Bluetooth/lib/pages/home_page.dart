@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
 import '../widgets/message_bubble.dart';
-import '../services/socket_service.dart';
 import '../widgets/custom_app_bar.dart';
+import '../services/bluetooth_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
-
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
   final List<Map<String, String>> _messages = [];
-  final TextEditingController _controller = TextEditingController();
-  final SocketService _socketService = SocketService();
+  final _controller = TextEditingController();
+  final _btService = BluetoothService();
 
   @override
   void initState() {
     super.initState();
-    _socketService.messagesStream.listen((incomingMessage) {
-      setState(() {
-        _messages.insert(0, {"text": incomingMessage, "sender": "Friend"});
+    _btService.startScanAndConnect().then((_) {
+      _btService.messagesStream.listen((msg) {
+        setState(() {
+          _messages.insert(0, {'text': msg, 'sender': 'Phone'});
+        });
       });
     });
   }
@@ -29,15 +30,15 @@ class _HomePageState extends State<HomePage> {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
     setState(() {
-      _messages.insert(0, {"text": text, "sender": "You"});
+      _messages.insert(0, {'text': text, 'sender': 'You'});
     });
-    _socketService.sendMessage(text);
+    _btService.sendMessage(text);
     _controller.clear();
   }
 
   @override
   void dispose() {
-    _socketService.dispose();
+    _btService.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -52,12 +53,10 @@ class _HomePageState extends State<HomePage> {
             child: ListView.builder(
               reverse: true,
               itemCount: _messages.length,
-              itemBuilder: (ctx, i) {
-                return MessageBubble(
-                  text: _messages[i]["text"]!,
-                  sender: _messages[i]["sender"]!,
-                );
-              },
+              itemBuilder: (ctx, i) => MessageBubble(
+                text: _messages[i]['text']!,
+                sender: _messages[i]['sender']!,
+              ),
             ),
           ),
           const Divider(height: 1),
@@ -69,14 +68,11 @@ class _HomePageState extends State<HomePage> {
                   child: TextField(
                     controller: _controller,
                     decoration:
-                        const InputDecoration(labelText: "Type your message"),
+                        const InputDecoration(labelText: 'Type your message'),
                     onSubmitted: (_) => _sendMessage(),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: _sendMessage,
-                ),
+                IconButton(icon: const Icon(Icons.send), onPressed: _sendMessage),
               ],
             ),
           ),
